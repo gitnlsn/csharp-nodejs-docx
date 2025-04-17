@@ -1,19 +1,4 @@
-import { describe, it, expect } from "vitest";
-import { csharpRunner } from "../runnable";
-import path from "node:path";
-import fs from "node:fs";
-
-describe("Extract Paragraphs Between Sections", () => {
-    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
-        // Ler o arquivo DOCX como binário, não como UTF-8
-        const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
-        // Converter o buffer binário para base64
-        const base64Document = documentBuffer.toString("base64");
-
-        // Envie o documento codificado em base64 para o script C#
-        const result = await csharpRunner({
-            csharpScript: `
-                #r "nuget: DocumentFormat.OpenXml, 2.20.0"
+  #r "nuget: DocumentFormat.OpenXml, 2.20.0"
                 #r "nuget: Newtonsoft.Json, 13.0.3"
 
                 using System;
@@ -22,17 +7,29 @@ describe("Extract Paragraphs Between Sections", () => {
                 using System.Linq;
                 using System.Collections.Generic;
                 using System.Xml.Linq;
+                using DocumentFormat.OpenXml;
                 using DocumentFormat.OpenXml.Packaging;
                 using DocumentFormat.OpenXml.Wordprocessing;
                 using Newtonsoft.Json;
+                using A = DocumentFormat.OpenXml.Drawing;
+                using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
+                using PIC = DocumentFormat.OpenXml.Drawing.Pictures;
 
-                // Read the Base64 string from standard input
-                string base64Input = Console.In.ReadToEnd().Trim();
+                // Read the combined Base64 string from standard input
+                string combinedBase64Input = Console.In.ReadToEnd().Trim();
+                
+                // Split the input to get document and image
+                string[] inputParts = combinedBase64Input.Split(',');
+                string base64Document = inputParts[0];
+                string base64Image = inputParts[1];
 
                 try
                 {
-                    // Decode Base64 input
-                    byte[] docBytes = Convert.FromBase64String(base64Input);
+                    // Decode Base64 document
+                    byte[] docBytes = Convert.FromBase64String(base64Document);
+                    // Decode Base64 image
+                    byte[] imageBytes = Convert.FromBase64String(base64Image);
+                    
                     List<string> paragraphsBetweenSections = new List<string>();
                     List<Paragraph> paragraphsToRemove = new List<Paragraph>();
                     bool isCapturing = false;
@@ -40,9 +37,14 @@ describe("Extract Paragraphs Between Sections", () => {
                     Paragraph scopeHeading = null;
                     ParagraphProperties styleTemplate = null;
                     
-                    // Create a MemoryStream from the decoded bytes
-                    using (MemoryStream memoryStream = new MemoryStream(docBytes))
+                    // Create an expandable MemoryStream and copy the document content into it
+                    using (MemoryStream memoryStream = new MemoryStream())
                     {
+                        // Write document bytes to the stream
+                        memoryStream.Write(docBytes, 0, docBytes.Length);
+                        // Reset position to beginning of stream
+                        memoryStream.Position = 0;
+                        
                         // Open the document using OpenXML SDK with readwrite access
                         using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(memoryStream, true))
                         {
@@ -126,32 +128,33 @@ describe("Extract Paragraphs Between Sections", () => {
                                     paragraph.Remove();
                                 }
                                 
-                                // Add Lorem Ipsum paragraphs between the sections with the same style
-                                if (businessContextHeading != null && scopeHeading != null && styleTemplate != null)
+                                // Insert the image between the sections
+                                if (businessContextHeading != null && scopeHeading != null)
                                 {
-                                    string loremIpsumText = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book. It has survived not only five centuries, but also the leap into electronic typesetting, remaining essentially unchanged. It was popularised in the 1960s with the release of Letraset sheets containing Lorem Ipsum passages, and more recently with desktop publishing software like Aldus PageMaker including versions of Lorem Ipsum.";
-                                    
-                                    // Split the Lorem Ipsum text into 3 paragraphs
-                                    string[] loremParagraphs = new string[3];
-                                    loremParagraphs[0] = loremIpsumText;
-                                    loremParagraphs[1] = loremIpsumText;
-                                    loremParagraphs[2] = loremIpsumText;
-                                    
-                                    // Insert paragraphs in reverse order so they appear in correct order
-                                    for (int i = loremParagraphs.Length - 1; i >= 0; i--)
+                                    // Add the image to the document
+                                    ImagePart imagePart = mainPart.AddImagePart(ImagePartType.Jpeg);
+                                    using (MemoryStream imageStream = new MemoryStream(imageBytes))
                                     {
-                                        Paragraph newParagraph = new Paragraph();
-                                        
-                                        // Clone the style properties
-                                        newParagraph.AppendChild((ParagraphProperties)styleTemplate.CloneNode(true));
-                                        
-                                        // Add the text
-                                        Run run = new Run(new Text(loremParagraphs[i]));
-                                        newParagraph.AppendChild(run);
-                                        
-                                        // Insert after Business Context heading
-                                        body.InsertAfter(newParagraph, businessContextHeading);
+                                        imagePart.FeedData(imageStream);
                                     }
+                                    
+                                    // Create a new paragraph for the image
+                                    Paragraph imageParagraph = new Paragraph();
+                                    
+                                    // Apply style if available
+                                    if (styleTemplate != null)
+                                    {
+                                        imageParagraph.AppendChild((ParagraphProperties)styleTemplate.CloneNode(true));
+                                    }
+                                    
+                                    // Create the image element
+                                    Run run = new Run();
+                                    Drawing drawing = CreateImageElement(mainPart.GetIdOfPart(imagePart), 400, 300);
+                                    run.AppendChild(drawing);
+                                    imageParagraph.AppendChild(run);
+                                    
+                                    // Insert after Business Context heading
+                                    body.InsertAfter(imageParagraph, businessContextHeading);
                                 }
                                 
                                 // Save changes
@@ -177,49 +180,77 @@ describe("Extract Paragraphs Between Sections", () => {
                 {
                     Console.WriteLine($"An error occurred: {ex.Message}");
                 }
-            `,
-            pipePayload: base64Document
-        });
-
-        // Parse the returned JSON string to get the result object
-        const resultObject = JSON.parse(result);
-        const paragraphs = resultObject.Paragraphs;
-
-        // You can also save the modified document if needed
-        fs.writeFileSync(path.join(__dirname, "modified-sample.docx"),
-            Buffer.from(resultObject.ModifiedDocument, 'base64'));
-
-        expect(paragraphs).toEqual([
-            'UNSW allows employees to request an alternate day in lieu of the Australia Day public holiday.',
-            'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
-            'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
-        ]);
-    }, 30000);
-
-    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
-        // Ler o arquivo DOCX como binário, não como UTF-8
-        const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
-        // Converter o buffer binário para base64
-        const base64Document = documentBuffer.toString("base64");
-
-        // Envie o documento codificado em base64 para o script C#
-        const result = await csharpRunner({
-            csharpScriptPath: path.join(__dirname, "script.cs"),
-            pipePayload: base64Document
-        });
-
-        // Parse the returned JSON string to get the result object
-        const resultObject = JSON.parse(result);
-        const paragraphs = resultObject.Paragraphs;
-
-        // You can also save the modified document if needed
-        fs.writeFileSync(path.join(__dirname, "modified-sample.docx"),
-            Buffer.from(resultObject.ModifiedDocument, 'base64'));
-
-        expect(paragraphs).toEqual([
-            'UNSW allows employees to request an alternate day in lieu of the Australia Day public holiday.',
-            'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
-            'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
-        ]);
-    }, 30000);
-});
+                
+                // Helper method to create an image element
+                Drawing CreateImageElement(string relationshipId, int width, int height)
+                {
+                    double emuWidth = width * 9525; // Convert pixels to EMUs
+                    double emuHeight = height * 9525; // Convert pixels to EMUs
+                
+                    var element =
+                       new Drawing(
+                           new DW.Inline(
+                               new DW.Extent() { Cx = (Int64Value)emuWidth, Cy = (Int64Value)emuHeight },
+                               new DW.EffectExtent()
+                               {
+                                   LeftEdge = 0L,
+                                   TopEdge = 0L,
+                                   RightEdge = 0L,
+                                   BottomEdge = 0L
+                               },
+                               new DW.DocProperties()
+                               {
+                                   Id = (UInt32Value)1U,
+                                   Name = "Picture 1"
+                               },
+                               new DW.NonVisualGraphicFrameDrawingProperties(
+                                   new A.GraphicFrameLocks() { NoChangeAspect = true }),
+                               new A.Graphic(
+                                   new A.GraphicData(
+                                       new PIC.Picture(
+                                           new PIC.NonVisualPictureProperties(
+                                               new PIC.NonVisualDrawingProperties()
+                                               {
+                                                   Id = (UInt32Value)0U,
+                                                   Name = "New Bitmap Image.jpg"
+                                               },
+                                               new PIC.NonVisualPictureDrawingProperties()),
+                                           new PIC.BlipFill(
+                                               new A.Blip(
+                                                   new A.BlipExtensionList(
+                                                       new A.BlipExtension()
+                                                       {
+                                                           Uri = "{28A0092B-C50C-407E-A947-70E740481C1C}"
+                                                       })
+                                               )
+                                               {
+                                                   Embed = relationshipId,
+                                                   CompressionState =
+                                                       A.BlipCompressionValues.Print
+                                               },
+                                               new A.Stretch(
+                                                   new A.FillRectangle())),
+                                           new PIC.ShapeProperties(
+                                               new A.Transform2D(
+                                                   new A.Offset() { X = 0L, Y = 0L },
+                                                   new A.Extents()
+                                                   {
+                                                       Cx = (Int64Value)emuWidth,
+                                                       Cy = (Int64Value)emuHeight
+                                                   }),
+                                               new A.PresetGeometry(
+                                                   new A.AdjustValueList()
+                                               )
+                                               { Preset = A.ShapeTypeValues.Rectangle }))
+                                   )
+                                   { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" })
+                           )
+                           {
+                               DistanceFromTop = (UInt32Value)0U,
+                               DistanceFromBottom = (UInt32Value)0U,
+                               DistanceFromLeft = (UInt32Value)0U,
+                               DistanceFromRight = (UInt32Value)0U,
+                           });
+                
+                    return element;
+                }

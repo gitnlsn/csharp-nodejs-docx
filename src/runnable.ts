@@ -1,4 +1,4 @@
-import { spawnSync } from "node:child_process";
+import { spawn } from "node:child_process";
 import plimit from "p-limit";
 
 interface RunnableProps {
@@ -7,7 +7,7 @@ interface RunnableProps {
     pipePayload?: string;
 }
 
-const limit = plimit(10);
+const limit = plimit(1);
 
 export const csharpRunner = (props: RunnableProps) => {
     try {
@@ -20,31 +20,56 @@ export const csharpRunner = (props: RunnableProps) => {
     }
 };
 
-function executeThroughSpawn(props: RunnableProps): string {
-    // Determine which script execution method to use
-    let args: string[] = [];
-    
-    if (props.csharpScript) {
-        args = ['script', 'eval', props.csharpScript];
-    } else if (props.csharpScriptPath) {
-        args = ['script', props.csharpScriptPath];
-    } else {
-        throw new Error("No script provided");
-    }
-    
-    // Execute the command and pipe the payload to its stdin if available
-    const result = spawnSync('dotnet', args, {
-        input: props.pipePayload || undefined,
-        encoding: 'utf8'
+function executeThroughSpawn(props: RunnableProps): Promise<string> {
+    return new Promise((resolve, reject) => {
+        // Determine which script execution method to use
+        let args: string[] = [];
+        
+        if (props.csharpScript) {
+            args = ['script', 'eval', props.csharpScript];
+        } else if (props.csharpScriptPath) {
+            args = ['script', props.csharpScriptPath];
+        } else {
+            reject(new Error("No script provided"));
+            return;
+        }
+        
+        // Execute the command asynchronously
+        const childProcess = spawn('dotnet', args, {
+            stdio: ['pipe', 'pipe', 'pipe']
+        });
+        
+        let stdout = '';
+        let stderr = '';
+        
+        // Collect stdout data
+        childProcess.stdout.on('data', (data) => {
+            stdout += data.toString();
+        });
+        
+        // Collect stderr data
+        childProcess.stderr.on('data', (data) => {
+            stderr += data.toString();
+        });
+        
+        // Handle process completion
+        childProcess.on('close', (code) => {
+            if (code !== 0) {
+                reject(new Error(`Process exited with code ${code}: ${stderr}`));
+            } else {
+                resolve(stdout.trim());
+            }
+        });
+        
+        // Handle process errors
+        childProcess.on('error', (error) => {
+            reject(error);
+        });
+        
+        // Pipe payload to stdin if available
+        if (props.pipePayload) {
+            childProcess.stdin.write(props.pipePayload);
+            childProcess.stdin.end();
+        }
     });
-    
-    if (result.error) {
-        throw result.error;
-    }
-    
-    if (result.status !== 0) {
-        throw new Error(`Process exited with code ${result.status}: ${result.stderr}`);
-    }
-    
-    return result.stdout.toString().trim();
 }

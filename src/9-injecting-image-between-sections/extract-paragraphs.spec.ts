@@ -297,4 +297,41 @@ describe("Injecting Image Between Document Sections", () => {
             'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
         ]);
     }, 30000);
+
+    it("should inject an image between 'Business Context' and 'Scope' headings while preserving paragraphs", async () => {
+        // Read the DOCX file as binary
+        const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
+        // Convert the binary buffer to base64
+        const base64Document = documentBuffer.toString("base64");
+        
+        // Read the image file as binary
+        const imageBuffer = fs.readFileSync(path.join(__dirname, "sample.jpg"));
+        // Convert the binary buffer to base64
+        const base64Image = imageBuffer.toString("base64");
+
+        // Combine both base64 strings with a comma separator
+        const combinedBase64 = base64Document + "," + base64Image;
+
+        // Send the combined base64 encoded files to the C# script
+        const result = await csharpRunner({
+            csharpScriptPath: path.join(__dirname, "script.cs"),
+            pipePayload: combinedBase64
+        });
+
+        // Parse the returned JSON string to get the result object
+        const resultObject = JSON.parse(result);
+        const paragraphs = resultObject.Paragraphs;
+
+        // You can also save the modified document if needed
+        fs.writeFileSync(
+            path.join(__dirname, "modified-sample.docx"),
+            Buffer.from(resultObject.ModifiedDocument, 'base64')
+        );
+
+        expect(paragraphs).toEqual([
+            'UNSW allows employees to request an alternate day in lieu of the Australia Day public holiday.',
+            'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
+            'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
+        ]);
+    }, 30000);
 });
