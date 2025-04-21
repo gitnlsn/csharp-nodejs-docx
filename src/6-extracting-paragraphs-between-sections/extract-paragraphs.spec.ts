@@ -13,7 +13,7 @@ describe("Extract Paragraphs Between Sections", () => {
         // Envie o documento codificado em base64 para o script C#
         const paragraphsJson = await csharpRunner({
             csharpScript: `
-                #r "nuget: DocumentFormat.OpenXml, 2.20.0"
+                #r "nuget: DocumentFormat.OpenXml, 3.3.0"
                 #r "nuget: Newtonsoft.Json, 13.0.3"
 
                 using System;

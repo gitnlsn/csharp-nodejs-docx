@@ -40,6 +40,8 @@ describe("Extract base64", () => {
         
         const result = await csharpRunner({
             csharpScript: `
+            #r "nuget: System.Text.Json, 9.0.0"
+
             using System;
             using System.Text;
             using System.Collections.Generic;

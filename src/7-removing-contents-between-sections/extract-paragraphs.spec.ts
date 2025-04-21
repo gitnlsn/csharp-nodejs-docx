@@ -4,7 +4,7 @@ import path from "node:path";
 import fs from "node:fs";
 
 describe("Extract Paragraphs Between Sections", () => {
-    it.skip("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
+    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
         // Ler o arquivo DOCX como binário, não como UTF-8
         const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
         // Converter o buffer binário para base64
@@ -13,7 +13,7 @@ describe("Extract Paragraphs Between Sections", () => {
         // Envie o documento codificado em base64 para o script C#
         const result = await csharpRunner({
             csharpScript: `
-                #r "nuget: DocumentFormat.OpenXml, 2.20.0"
+                #r "nuget: DocumentFormat.OpenXml, 3.3.0"
                 #r "nuget: Newtonsoft.Json, 13.0.3"
 
                 using System;
@@ -37,9 +37,14 @@ describe("Extract Paragraphs Between Sections", () => {
                     List<Paragraph> paragraphsToRemove = new List<Paragraph>();
                     bool isCapturing = false;
                     
-                    // Create a MemoryStream from the decoded bytes
-                    using (MemoryStream memoryStream = new MemoryStream(docBytes))
+                    // Create an expandable MemoryStream
+                    using (MemoryStream memoryStream = new MemoryStream())
                     {
+                        // Write the document bytes to the stream
+                        memoryStream.Write(docBytes, 0, docBytes.Length);
+                        // Reset the position to the beginning
+                        memoryStream.Position = 0;
+                        
                         // Open the document using OpenXML SDK with readwrite access
                         using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(memoryStream, true))
                         {
@@ -139,33 +144,6 @@ describe("Extract Paragraphs Between Sections", () => {
                     Console.WriteLine($"An error occurred: {ex.Message}");
                 }
             `,
-            pipePayload: base64Document
-        });
-
-        // Parse the returned JSON string to get the result object
-        const resultObject = JSON.parse(result);
-        const paragraphs = resultObject.Paragraphs;
-
-        // You can also save the modified document if needed
-        fs.writeFileSync(path.join(__dirname, "modified-sample.docx"),
-            Buffer.from(resultObject.ModifiedDocument, 'base64'));
-
-        expect(paragraphs).toEqual([
-            'UNSW allows employees to request an alternate day in lieu of the Australia Day public holiday.',
-            'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
-            'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
-        ]);
-    }, 30000);
-
-    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
-        // Ler o arquivo DOCX como binário, não como UTF-8
-        const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
-        // Converter o buffer binário para base64
-        const base64Document = documentBuffer.toString("base64");
-
-        // Envie o documento codificado em base64 para o script C#
-        const result = await csharpRunner({
-            csharpScriptPath: path.join(__dirname, "script.cs"),
             pipePayload: base64Document
         });
 

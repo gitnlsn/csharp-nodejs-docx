@@ -1,9 +1,10 @@
-#r "nuget: DocumentFormat.OpenXml, 2.20.0"
+#r "nuget: DocumentFormat.OpenXml, 3.3.0"
 
 using System;
 using System.IO;
 using System.Text;
 using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
 
 // Read the Base64 string from standard input
 string base64Input = Console.In.ReadToEnd().Trim();
