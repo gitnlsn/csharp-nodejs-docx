@@ -98,5 +98,5 @@ describe("Extract base64", () => {
         })
 
         expect(result).toBe(longString)
-    }, 300000)
+    })
 })

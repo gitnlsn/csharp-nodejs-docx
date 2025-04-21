@@ -18,7 +18,7 @@ describe("Extract Styles", () => {
         });
 
         expect(styles).toBe(`${expectedStyles}`);
-    }, 30000);
+    });
 
     it("should extract styles from a document", async () => {
         // Ler o arquivo DOCX como binário, não como UTF-8
@@ -100,7 +100,7 @@ describe("Extract Styles", () => {
         });
 
         expect(styles).toBe(`${expectedStyles}`);
-    }, 30000);
+    });
 });
 
 describe("Extract Styles", () => {
@@ -119,7 +119,7 @@ describe("Extract Styles", () => {
         });
 
         expect(styles).toBe(`${expectedStyles}`);
-    }, 30000);
+    });
 
     it("should extract styles from a document", async () => {
         // Ler o arquivo DOCX como binário, não como UTF-8
@@ -186,5 +186,5 @@ describe("Extract Styles", () => {
         });
 
         expect(styles).toBe(`${expectedStyles}`);
-    }, 30000);
+    });
 });

@@ -129,9 +129,9 @@ describe("Extract Paragraphs Between Sections", () => {
             'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
             'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
         ]);
-    }, 30000);
+    });
 
-    it.skip("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
+    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
         // Ler o arquivo DOCX como binário, não como UTF-8
         const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
         // Converter o buffer binário para base64
@@ -260,5 +260,5 @@ describe("Extract Paragraphs Between Sections", () => {
             'Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.',
             'The alternate day must be taken either the working day prior to the Australia Day public holiday, or the working day after the Australia Day public holiday – or another day in the same pay period as the Australia Day public holiday.'
         ]);
-    }, 30000);
+    });
 });

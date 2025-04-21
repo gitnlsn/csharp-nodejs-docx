@@ -1,0 +1,16 @@
+FROM mcr.microsoft.com/dotnet/sdk:8.0-alpine AS build
+
+# Instalar dotnet-script
+RUN dotnet tool install -g dotnet-script
+
+# Adicionar o diretório de ferramentas globais ao PATH
+ENV PATH="${PATH}:/root/.dotnet/tools"
+
+# Criar diretório de trabalho
+WORKDIR /scripts
+
+# Definir o ponto de entrada para permitir uso fácil
+ENTRYPOINT ["dotnet-script"]
+
+# Definir o diretório de trabalho como o diretório padrão
+WORKDIR /scripts

@@ -3,18 +3,22 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "docker:build": "docker build -t dotnet-script -f docker/dockerfile.dotnet.yml .",
+    "docker:run": "docker run --rm -i dotnet-script"
   },
   "author": "",
   "license": "ISC",
   "description": "",
   "devDependencies": {
+    "@types/dockerode": "^3.3.38",
     "@types/node": "^22.14.1",
     "tsx": "^4.19.3",
     "typescript": "^5.8.3",
     "vitest": "^3.1.1"
   },
   "dependencies": {
+    "dockerode": "^4.0.6",
     "p-limit": "^6.2.0"
   }
 }
