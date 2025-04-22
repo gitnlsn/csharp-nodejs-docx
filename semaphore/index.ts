@@ -6,12 +6,12 @@ const app = express();
 const docker = new Docker();
 const limit = pLimit(1);
 
-const WaitTime = 3000;
+const WaitTime = 10000;
 const MaxInstances = 3;
 
 async function countRunningInstances(imageName: string): Promise<number> {
     const runningContainers = await docker.listContainers({
-        filters: { ancestor: [imageName], status: ['running'] }
+        filters: { ancestor: [imageName] }
     });
     
     const numRunning = runningContainers.length;

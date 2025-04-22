@@ -25,7 +25,7 @@ describe("Generate and Execute C# Script", () => {
         const documentXml = docxEntry.getData().toString();
 
         // Generate a C# script using the LLM with the specified instruction
-        const instruction = "Include the image in the document.xml at the end of the Business Context section. The image will be provided as base64 encoded string after docx base64 string with comma separator";
+        const instruction = "Include the image in the document.xml at the end of the last paragraph in the Business Context section. The image will be provided as base64 encoded string after docx base64 string with comma separator";
         const script = await generateCSharpScript({
             instruction,
             textContent: documentXml,

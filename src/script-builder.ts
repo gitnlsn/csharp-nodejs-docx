@@ -7,7 +7,7 @@ import { extractRunningCode } from "./utils/extract-running-code/extract-running
 
 interface GenerateCSharpScriptOptions {
   instruction: string;
-  textContent?: string;
+  textContent: string;
   model: string;
 }
 
