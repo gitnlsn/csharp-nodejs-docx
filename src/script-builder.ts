@@ -5,6 +5,8 @@ import { imageInjectScript } from "./sample-scripts/image-inject";
 import { tableInjectScript } from "./sample-scripts/table-inject";
 import { extractRunningCode } from "./utils/extract-running-code/extract-running-code";
 import { countTokens } from "./count-tokens";
+import fs from 'node:fs'
+import path from 'node:path'
 
 interface GenerateCSharpScriptOptions {
   instruction: string;
@@ -84,6 +86,11 @@ export async function generateCSharpScript(
   ${tableInjectScript}
   </TableInjectExamples>
   `
+
+  fs.writeFileSync(
+    path.join(__dirname, "last-script-builder-prompt.txt"),
+    Buffer.from(prompt, 'utf-8')
+  );
 
   const promptTokens = countTokens({
     text: prompt,

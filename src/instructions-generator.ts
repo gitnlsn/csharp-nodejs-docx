@@ -1,7 +1,8 @@
 import { ChatOpenAI, TiktokenModel } from "@langchain/openai";
 import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { countTokens } from "./count-tokens";
-
+import fs from 'node:fs'
+import path from 'node:path'
 
 interface GenerateInstructionsOptions {
     instruction: string;
@@ -70,6 +71,11 @@ export async function generateInstructions(options: GenerateInstructionsOptions)
     1. For each paragraphs between Business Context and Scope sections, include a new paragraph with the same content
     </ExampleInstructions4>
     `
+
+    fs.writeFileSync(
+        path.join(__dirname, "last-instructions-generator-prompt.txt"),
+        Buffer.from(prompt, 'utf-8')
+      );
 
     const promptTokens = countTokens({
         text: prompt,
