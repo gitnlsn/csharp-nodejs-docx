@@ -1,0 +1,4 @@
+Script content:
+'''csharp
+Console.WriteLine("Hello, world!");
+'''csharp
