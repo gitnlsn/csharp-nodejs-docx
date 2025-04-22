@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  semaphore:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: semaphore-app:latest
+    container_name: semaphore-container
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+    # Mount the Docker socket to allow container to interact with Docker daemon
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - NODE_ENV=production

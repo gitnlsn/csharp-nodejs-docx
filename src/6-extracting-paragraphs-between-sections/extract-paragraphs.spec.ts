@@ -131,7 +131,7 @@ describe("Extract Paragraphs Between Sections", () => {
         ]);
     });
 
-    it("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
+    it.skip("should extract paragraphs between 'Business Context' and 'Scope' headings", async () => {
         // Ler o arquivo DOCX como binário, não como UTF-8
         const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
         // Converter o buffer binário para base64

@@ -1,18 +1,13 @@
 import { spawn } from "node:child_process";
 import fs from "node:fs";
-import Docker from "dockerode";
 import pLimit from "p-limit";
+import axios from "axios";
+
 interface RunnableProps {
     csharpScript?: string;
     csharpScriptPath?: string;
     pipePayload?: string;
-    maxInstances?: number; // Maximum number of allowed Docker instances
-    dockerImage?: string; // Docker image name to monitor
-    pollingInterval?: number; // Time in ms to wait between checks when at capacity
 }
-
-// Create a Docker client instance
-const docker = new Docker();
 
 const limit = pLimit(1);
 
@@ -25,30 +20,30 @@ export const csharpRunner = (props: RunnableProps) => {
     }
 };
 
-async function waitForAvailableInstance(imageName: string, maxInstances: number, pollingInterval: number): Promise<void> {
+type SemaphoreStatus = "ok" | "blocked" | "error";
+async function checkSemaphore(): Promise<{status: SemaphoreStatus}> {
     while (true) {
-        const runningContainers = await docker.listContainers({
-            filters: { ancestor: [imageName], status: ['running'] }
-        });
-        
-        const numRunning = runningContainers.length;
-        console.log(`Running instances of ${imageName}: ${numRunning}/${maxInstances}`);
-        
-        if (numRunning < maxInstances) {
-            return; // Ready to create a new instance
+        try {
+            const response = await axios.get('http://localhost:3000');
+            
+            if (response.status === 200) {
+                console.log('Semaphore service allowed execution');
+                return { status: "ok" };
+            }
+        } catch (error) {
+            if (axios.isAxiosError(error) && error.response?.status === 429) {
+                console.log(`Maximum instances reached, waiting...`);
+                return { status: "blocked" };
+            } else {
+                return { status: "error" };
+            }
         }
-        
-        console.log(`Maximum instances (${maxInstances}) reached, waiting...`);
-        await new Promise(resolve => setTimeout(resolve, pollingInterval));
     }
 }
 
 function executeThroughSpawn(props: RunnableProps): Promise<string> {
     return new Promise(async (resolve, reject) => {
         // Set defaults for new properties
-        const maxInstances = props.maxInstances || 3;
-        const dockerImage = props.dockerImage || 'dotnet-script';
-        const pollingInterval = props.pollingInterval || 300; // 1 second default
         
         // Determine which script execution method to use
         let args: string[] = [];
@@ -64,11 +59,15 @@ function executeThroughSpawn(props: RunnableProps): Promise<string> {
         }
         
         try {
-            // Wait for an available instance before proceeding
-            await waitForAvailableInstance(dockerImage, maxInstances, pollingInterval);
+            // Wait for the semaphore service to allow execution
+            let status: SemaphoreStatus = "blocked";
+            while (status === "blocked") {
+                const { status: updatedStatus } = await checkSemaphore();
+                status = updatedStatus;
+            }
             
             // Execute the command asynchronously
-            const command = ['docker', 'run', '--rm', '-i', dockerImage, ...args];
+            const command = ['docker', 'run', '--rm', '-i', 'dotnet-script', ...args];
             
             const childProcess = spawn(command[0], command.slice(1), {
                 stdio: ['pipe', 'pipe', 'pipe']
