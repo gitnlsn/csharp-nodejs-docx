@@ -1,0 +1,10 @@
+<w:tcBorders>
+    <w:top
+        w:themeColor="accent1" w:themeTint="BF" />
+    <w:left
+        w:themeColor="accent1" w:themeTint="BF" />
+    <w:bottom
+        w:themeColor="accent1" w:themeTint="BF" />
+    <w:right
+        w:themeColor="accent1" w:themeTint="BF" />
+</w:tcBorders>
