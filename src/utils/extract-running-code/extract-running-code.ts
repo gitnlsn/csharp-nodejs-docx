@@ -7,7 +7,5 @@ export const extractRunningCode = (code: string) => {
         return match[1].trim();
     }
 
-    console.log("No match found");
-    console.log(code);
     return code;
 };
