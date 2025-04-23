@@ -36,11 +36,9 @@ export async function generateInstructions(options: GenerateInstructionsOptions)
     Your instructions should:
     - Be very procedural, detailed and precise
     - Be in the form of a numbered list of instructions
-    - when creating a minor element (paragraph, table, image, etc), be specific about the styles
-    - when updating a minor element (paragraph, table, image, etc), keep the original styles unless there are user instructions
-    - when deleting a minor element, be specific about the styles
-    - creating new sectoins, be specific about the styles
-    - always specify how to capture the style for the minor elements we need to modify 
+    - when creating or updating a minor element (paragraph, table, image, etc), be specific about the styles and capture the style of existing elements to keep it consistent.
+    - when updating content, keep the original style and formatting.
+    - always specify how to capture the style for the minor elements we need to modify to keep the style consistent.s
     
     Here are some examples:
     

@@ -53,6 +53,8 @@ export async function generateCSharpScript(
   2. Apply the instructions from the user to the docx file
   3. Output the saved docx file as base64 encoded string via stdout (Console.WriteLn)
   4. Follow strictly the user instructions to generate the script.
+  5. For each task, create a separated new function that deals with the problem.
+  6. Assure that all tasks are executed, if necessary, repeat the whole body processing to assure logical segregation.
   
   More Instructions:
   - Output only the script in csharp language
@@ -67,9 +69,8 @@ export async function generateCSharpScript(
       </AvoidFixedMemoryBuffers>
   - When we say section content, we mean all the minor elements (paragraphs, tables, images, etc) between the heading section and the next heading section.
   - When we say the end of a section, we mean the last minor element before the next heading section.
-  - Think about the errors that might happen and foresee them:
+  - After generating the script, review the script considering the errors that might happen and foresee them:
       <ForeseeErrors>
-          error CS0246: The type or namespace name 'OpenXmlElement' could not be found (are you missing a using directive or an assembly reference?)
           error CS0246: The type or namespace name 'OpenXmlElement' could not be found (are you missing a using directive or an assembly reference?)
           error CS1503: Argument 1: cannot convert from 'DocumentFormat.OpenXml.OpenXmlElement' to 'OpenXmlElement'
       </ForeseeErrors>
