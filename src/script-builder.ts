@@ -3,11 +3,13 @@ import { ChatPromptTemplate } from "@langchain/core/prompts";
 import { extractParagraphScript } from "./sample-scripts/extract-paragraph";
 import { imageInjectScript } from "./sample-scripts/image-inject";
 import { tableInjectScript } from "./sample-scripts/table-inject";
+import { updateParagraphsScript } from "./sample-scripts/update-paragraphs";
+import { updateTableOfContentsScript } from "./sample-scripts/update-table-of-contents";
+import { includeItemInListScript } from "./sample-scripts/include-item-in-list";
 import { extractRunningCode } from "./utils/extract-running-code/extract-running-code";
 import { countTokens } from "./count-tokens";
 import fs from 'node:fs'
 import path from 'node:path'
-
 interface GenerateCSharpScriptOptions {
   instruction: string;
   textContent: string;
@@ -53,8 +55,7 @@ export async function generateCSharpScript(
   2. Apply the instructions from the user to the docx file
   3. Output the saved docx file as base64 encoded string via stdout (Console.WriteLn)
   4. Follow strictly the user instructions to generate the script.
-  5. For each task, create a separated new function that deals with the problem.
-  6. Assure that all tasks are executed, if necessary, repeat the whole body processing to assure logical segregation.
+  5. Assure that all tasks are executed, if necessary, repeat the whole body processing to assure logical segregation.
   
   More Instructions:
   - Output only the script in csharp language
@@ -74,7 +75,25 @@ export async function generateCSharpScript(
           error CS0246: The type or namespace name 'OpenXmlElement' could not be found (are you missing a using directive or an assembly reference?)
           error CS1503: Argument 1: cannot convert from 'DocumentFormat.OpenXml.OpenXmlElement' to 'OpenXmlElement'
       </ForeseeErrors>
+  - Don't forget to review the imports and namespaces (if you have any doubts, include them all)
+      <ReferenceHeaders>
+        #r "nuget: DocumentFormat.OpenXml, 3.3.0"
+        #r "nuget: Newtonsoft.Json, 13.0.3"
+
+        using System;
+        using System.IO;
+        using System.Text;
+        using System.Linq;
+        using System.Collections.Generic;
+        using System.Xml.Linq;
+        using DocumentFormat.OpenXml;
+        using DocumentFormat.OpenXml.Packaging;
+        using DocumentFormat.OpenXml.Wordprocessing;
+        using Newtonsoft.Json;
+      </ReferenceHeaders>
   
+
+
   <ExtractParagraphExamples>
   ${extractParagraphScript}
   </ExtractParagraphExamples>
@@ -86,6 +105,18 @@ export async function generateCSharpScript(
   <TableInjectExamples>
   ${tableInjectScript}
   </TableInjectExamples>
+
+  <UpdateParagraphsExamples>
+  ${updateParagraphsScript}
+  </UpdateParagraphsExamples>
+
+  <UpdateTableOfContentsExamples>
+  ${updateTableOfContentsScript}
+  </UpdateTableOfContentsExamples>
+
+  <InjectItemInListExamples>
+  ${includeItemInListScript}
+  </InjectItemInListExamples>
   `
 
   fs.writeFileSync(

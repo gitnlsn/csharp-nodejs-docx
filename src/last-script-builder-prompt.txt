@@ -17,8 +17,7 @@
   2. Apply the instructions from the user to the docx file
   3. Output the saved docx file as base64 encoded string via stdout (Console.WriteLn)
   4. Follow strictly the user instructions to generate the script.
-  5. For each task, create a separated new function that deals with the problem.
-  6. Assure that all tasks are executed, if necessary, repeat the whole body processing to assure logical segregation.
+  5. Assure that all tasks are executed, if necessary, repeat the whole body processing to assure logical segregation.
   
   More Instructions:
   - Output only the script in csharp language
@@ -38,7 +37,25 @@
           error CS0246: The type or namespace name 'OpenXmlElement' could not be found (are you missing a using directive or an assembly reference?)
           error CS1503: Argument 1: cannot convert from 'DocumentFormat.OpenXml.OpenXmlElement' to 'OpenXmlElement'
       </ForeseeErrors>
+  - Don't forget to review the imports and namespaces (if you have any doubts, include them all)
+      <ReferenceHeaders>
+        #r "nuget: DocumentFormat.OpenXml, 3.3.0"
+        #r "nuget: Newtonsoft.Json, 13.0.3"
+
+        using System;
+        using System.IO;
+        using System.Text;
+        using System.Linq;
+        using System.Collections.Generic;
+        using System.Xml.Linq;
+        using DocumentFormat.OpenXml;
+        using DocumentFormat.OpenXml.Packaging;
+        using DocumentFormat.OpenXml.Wordprocessing;
+        using Newtonsoft.Json;
+      </ReferenceHeaders>
   
+
+
   <ExtractParagraphExamples>
   
 #r "nuget: DocumentFormat.OpenXml, 3.3.0"
@@ -675,4 +692,590 @@ catch (Exception ex)
 }}
 
   </TableInjectExamples>
+
+  <UpdateParagraphsExamples>
+  
+#r "nuget: DocumentFormat.OpenXml, 3.3.0"
+#r "nuget: Newtonsoft.Json, 13.0.3"
+
+using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System.Xml.Linq;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Newtonsoft.Json;
+
+// The specific text to find and replace
+string targetText = "Employees must submit in writing to their supervisor nominating their chosen alternate day of leave in lieu of the Australia Day public holiday.";
+
+// Replacement text
+string replacementText = "Lorem Ipsum is simply dummy text of the printing and typesetting industry. Lorem Ipsum has been the industry's standard dummy text ever since the 1500s, when an unknown printer took a galley of type and scrambled it to make a type specimen book.";
+
+// Read the Base64 string from standard input
+string base64Input = Console.In.ReadToEnd().Trim();
+
+try
+{{
+    // Decode Base64 input
+    byte[] docBytes = Convert.FromBase64String(base64Input);
+    List<string> originalParagraphs = new List<string>();
+    List<string> modifiedParagraphs = new List<string>();
+    
+    // Create an expandable MemoryStream
+    using (MemoryStream memoryStream = new MemoryStream())
+    {{
+        // Write the document bytes to the stream
+        memoryStream.Write(docBytes, 0, docBytes.Length);
+        // Reset the position to the beginning
+        memoryStream.Position = 0;
+        
+        // Open the document using OpenXML SDK with readwrite access
+        using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(memoryStream, true))
+        {{
+            // Get the MainDocumentPart of the document
+            MainDocumentPart mainPart = wordDoc.MainDocumentPart;
+            
+            if (mainPart != null)
+            {{
+                Document doc = mainPart.Document;
+                Body body = doc.Body;
+                
+                bool isCapturing = false;
+                
+                // Iterate through all paragraphs in the document
+                foreach (var paragraph in body.Elements<Paragraph>())
+                {{
+                    // Check if this paragraph is a heading
+                    bool isHeading2 = false;
+                    string headingText = "";
+                    
+                    // Get paragraph style info
+                    var paragraphProperties = paragraph.Elements<ParagraphProperties>().FirstOrDefault();
+                    if (paragraphProperties != null)
+                    {{
+                        var paragraphStyleId = paragraphProperties.ParagraphStyleId;
+                        if (paragraphStyleId != null && paragraphStyleId.Val != null && 
+                            paragraphStyleId.Val.Value.Contains("Heading2", StringComparison.OrdinalIgnoreCase))
+                        {{
+                            isHeading2 = true;
+                            headingText = string.Join("", paragraph.Descendants<Text>().Select(t => t.Text));
+                        }}
+                    }}
+                    
+                    // Check for alternative heading identification if needed
+                    if (!isHeading2 && paragraphProperties != null)
+                    {{
+                        var outlineLevel = paragraphProperties.Descendants<OutlineLevel>().FirstOrDefault();
+                        if (outlineLevel != null && outlineLevel.Val != null && outlineLevel.Val.Value == 1)
+                        {{
+                            isHeading2 = true;
+                            headingText = string.Join("", paragraph.Descendants<Text>().Select(t => t.Text));
+                        }}
+                    }}
+                    
+                    // Handle section markers
+                    if (isHeading2)
+                    {{
+                        if (headingText.Contains("Business Context", StringComparison.OrdinalIgnoreCase))
+                        {{
+                            isCapturing = true;
+                            continue;
+                        }}
+                        else if (headingText.Contains("Scope", StringComparison.OrdinalIgnoreCase))
+                        {{
+                            isCapturing = false;
+                            break;
+                        }}
+                    }}
+                    
+                    // Capture paragraphs between sections
+                    if (isCapturing)
+                    {{
+                        string paragraphText = string.Join("", paragraph.Descendants<Text>().Select(t => t.Text)).Trim();
+                        if (!string.IsNullOrWhiteSpace(paragraphText))
+                        {{
+                            originalParagraphs.Add(paragraphText);
+                            
+                            // Check if this is our target paragraph to modify
+                            if (paragraphText == targetText)
+                            {{
+                                // Remove all existing runs containing text
+                                var runsToRemove = paragraph.Elements<Run>().ToList();
+                                foreach (var run in runsToRemove)
+                                {{
+                                    run.Remove();
+                                }}
+                                
+                                // Add a new run with the replacement text
+                                Run newRun = new Run(new Text(replacementText));
+                                paragraph.AppendChild(newRun);
+                                
+                                modifiedParagraphs.Add(replacementText);
+                            }}
+                            else
+                            {{
+                                modifiedParagraphs.Add(paragraphText);
+                            }}
+                        }}
+                    }}
+                }}
+                
+                // Save changes
+                doc.Save();
+            }}
+        }}
+        
+        // Convert the modified document back to Base64
+        string modifiedDocBase64 = Convert.ToBase64String(memoryStream.ToArray());
+        
+        // Create a result object with both the paragraphs and modified document
+        var resultObject = new
+        {{
+            OriginalParagraphs = originalParagraphs,
+            ModifiedParagraphs = modifiedParagraphs,
+            ModifiedDocument = modifiedDocBase64
+        }};
+        
+        // Output the result object as JSON
+        Console.WriteLine(JsonConvert.SerializeObject(resultObject));
+    }}
+}}
+catch (Exception ex)
+{{
+    Console.WriteLine($"An error occurred: {{ex.Message}}");
+}}
+
+  </UpdateParagraphsExamples>
+
+  <UpdateTableOfContentsExamples>
+  
+#r "nuget: DocumentFormat.OpenXml, 3.3.0"
+#r "nuget: Newtonsoft.Json, 13.0.3"
+
+using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using System.Xml;
+using System.Xml.Linq;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using DocumentFormat.OpenXml;
+using Newtonsoft.Json;
+
+// Read the Base64 string from standard input
+string base64Input = Console.In.ReadToEnd().Trim();
+
+try
+{{
+    // Decode Base64 input
+    byte[] docBytes = Convert.FromBase64String(base64Input);
+    
+    // Create an expandable MemoryStream
+    using (MemoryStream memoryStream = new MemoryStream())
+    {{
+        // Write the document bytes to the stream
+        memoryStream.Write(docBytes, 0, docBytes.Length);
+        // Reset the position to the beginning
+        memoryStream.Position = 0;
+        
+        // Open the document using OpenXML SDK with readwrite access
+        using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(memoryStream, true))
+        {{
+            // Get the MainDocumentPart of the document
+            MainDocumentPart mainPart = wordDoc.MainDocumentPart;
+            
+            if (mainPart != null)
+            {{
+                // Find the Table of Contents
+                SdtBlock tocSdt = mainPart.Document.Body.Descendants<SdtBlock>()
+                    .FirstOrDefault(sdt => {{
+                        var docPartGallery = sdt.SdtProperties?.GetFirstChild<SdtContentDocPartObject>()?.DocPartGallery;
+                        return docPartGallery != null && docPartGallery.Val.Value == "Table of Contents";
+                    }});
+
+                if (tocSdt != null)
+                {{
+                    // Get the content of the TOC
+                    SdtContentBlock sdtContent = tocSdt.GetFirstChild<SdtContentBlock>();
+                    
+                    if (sdtContent != null)
+                    {{
+                        // Find the paragraphs in the TOC
+                        var paragraphs = sdtContent.Elements<Paragraph>().ToList();
+                        
+                        // Find the indices for Business Context (1.2) and Scope (1.3)
+                        int businessContextIndex = -1;
+                        int scopeIndex = -1;
+                        
+                        for (int i = 0; i < paragraphs.Count; i++)
+                        {{
+                            var paragraph = paragraphs[i];
+                            var hyperlinks = paragraph.Descendants<Hyperlink>().ToList();
+                            
+                            if (hyperlinks.Count > 0)
+                            {{
+                                string paragraphText = string.Join("", paragraph.Descendants<Text>().Select(t => t.Text));
+                                
+                                // Check if it's the Business Context entry
+                                if (paragraphText.Contains("1.2") && paragraphText.Contains("Business Context"))
+                                {{
+                                    businessContextIndex = i;
+                                }}
+                                
+                                // Check if it's the Scope entry
+                                if (paragraphText.Contains("1.3") && paragraphText.Contains("Scope"))
+                                {{
+                                    scopeIndex = i;
+                                    break;
+                                }}
+                            }}
+                        }}
+                        
+                        // If we found both sections, insert a new entry between them
+                        if (businessContextIndex >= 0 && scopeIndex > businessContextIndex)
+                        {{
+                            // Copy the Business Context paragraph as a template for our new entry
+                            Paragraph templateParagraph = (Paragraph)paragraphs[businessContextIndex].CloneNode(true);
+                            
+                            // Create a new TOC entry
+                            Paragraph newTocEntry = new Paragraph();
+                            
+                            // Copy the paragraph properties
+                            if (templateParagraph.ParagraphProperties != null)
+                            {{
+                                newTocEntry.ParagraphProperties = (ParagraphProperties)templateParagraph.ParagraphProperties.CloneNode(true);
+                            }}
+                            
+                            // Create the hyperlink with the new anchor
+                            Hyperlink hyperlink = new Hyperlink() {{ Anchor = "_Toc188259999", History = true }};
+                            
+                            // Section number
+                            Run sectionNumberRun = new Run();
+                            RunProperties sectionRunProps = new RunProperties();
+                            sectionRunProps.Append(new RunStyle() {{ Val = "Hyperlink" }});
+                            sectionRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            sectionRunProps.Append(new NoProof());
+                            sectionNumberRun.Append(sectionRunProps);
+                            sectionNumberRun.Append(new Text("1.2.5"));
+                            hyperlink.Append(sectionNumberRun);
+                            
+                            // Tab
+                            Run tabRun = new Run();
+                            RunProperties tabRunProps = new RunProperties();
+                            tabRunProps.Append(new RunFonts() {{ Ascii = "Aptos", EastAsia = "minorEastAsia", HighAnsi = "Aptos", ComplexScript = "minorBidi" }});
+                            tabRunProps.Append(new SmallCaps() {{ Val = false }});
+                            tabRunProps.Append(new NoProof());
+                            tabRunProps.Append(new Kern() {{ Val = 2U }});
+                            tabRunProps.Append(new FontSize() {{ Val = "24" }});
+                            tabRunProps.Append(new FontSizeComplexScript() {{ Val = "24" }});
+                            tabRunProps.Append(new Languages() {{ EastAsia = "en-AU" }});
+                            tabRun.Append(tabRunProps);
+                            tabRun.Append(new TabChar());
+                            hyperlink.Append(tabRun);
+                            
+                            // Section title
+                            Run titleRun = new Run();
+                            RunProperties titleRunProps = new RunProperties();
+                            titleRunProps.Append(new RunStyle() {{ Val = "Hyperlink" }});
+                            titleRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            titleRunProps.Append(new NoProof());
+                            titleRun.Append(titleRunProps);
+                            titleRun.Append(new Text("Implementation Approach"));
+                            hyperlink.Append(titleRun);
+                            
+                            // Add tab and page reference
+                            Run webHiddenTabRun = new Run();
+                            RunProperties webHiddenTabRunProps = new RunProperties();
+                            webHiddenTabRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            webHiddenTabRunProps.Append(new NoProof());
+                            webHiddenTabRunProps.Append(new WebHidden());
+                            webHiddenTabRun.Append(webHiddenTabRunProps);
+                            webHiddenTabRun.Append(new TabChar());
+                            hyperlink.Append(webHiddenTabRun);
+                            
+                            // Add field begin
+                            Run fieldBeginRun = new Run();
+                            RunProperties fieldBeginRunProps = new RunProperties();
+                            fieldBeginRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            fieldBeginRunProps.Append(new NoProof());
+                            fieldBeginRunProps.Append(new WebHidden());
+                            fieldBeginRun.Append(fieldBeginRunProps);
+                            fieldBeginRun.Append(new FieldChar() {{ FieldCharType = FieldCharValues.Begin }});
+                            hyperlink.Append(fieldBeginRun);
+                            
+                            // Add field instruction
+                            Run fieldInstrRun = new Run();
+                            RunProperties fieldInstrRunProps = new RunProperties();
+                            fieldInstrRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            fieldInstrRunProps.Append(new NoProof());
+                            fieldInstrRunProps.Append(new WebHidden());
+                            fieldInstrRun.Append(fieldInstrRunProps);
+                            fieldInstrRun.Append(new FieldCode(" PAGEREF _Toc188259999 \\h ") {{ Space = SpaceProcessingModeValues.Preserve }});
+                            hyperlink.Append(fieldInstrRun);
+                            
+                            // Add empty run
+                            Run emptyRun = new Run();
+                            RunProperties emptyRunProps = new RunProperties();
+                            emptyRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            emptyRunProps.Append(new NoProof());
+                            emptyRunProps.Append(new WebHidden());
+                            emptyRun.Append(emptyRunProps);
+                            hyperlink.Append(emptyRun);
+                            
+                            // Add field separator
+                            Run fieldSepRun = new Run();
+                            RunProperties fieldSepRunProps = new RunProperties();
+                            fieldSepRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            fieldSepRunProps.Append(new NoProof());
+                            fieldSepRunProps.Append(new WebHidden());
+                            fieldSepRun.Append(fieldSepRunProps);
+                            fieldSepRun.Append(new FieldChar() {{ FieldCharType = FieldCharValues.Separate }});
+                            hyperlink.Append(fieldSepRun);
+                            
+                            // Add page number
+                            Run pageNumRun = new Run();
+                            pageNumRun.AddNamespaceDeclaration("w14", "http://schemas.microsoft.com/office/word/2010/wordml");
+                            RunProperties pageNumRunProps = new RunProperties();
+                            pageNumRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            pageNumRunProps.Append(new NoProof());
+                            pageNumRunProps.Append(new WebHidden());
+                            pageNumRun.Append(pageNumRunProps);
+                            pageNumRun.Append(new Text("5")); // Arbitrary page number
+                            hyperlink.Append(pageNumRun);
+                            
+                            // Add field end
+                            Run fieldEndRun = new Run();
+                            RunProperties fieldEndRunProps = new RunProperties();
+                            fieldEndRunProps.Append(new RunFonts() {{ Ascii = "Aptos", HighAnsi = "Aptos" }});
+                            fieldEndRunProps.Append(new NoProof());
+                            fieldEndRunProps.Append(new WebHidden());
+                            fieldEndRun.Append(fieldEndRunProps);
+                            fieldEndRun.Append(new FieldChar() {{ FieldCharType = FieldCharValues.End }});
+                            hyperlink.Append(fieldEndRun);
+                            
+                            // Add the hyperlink to the new TOC entry
+                            newTocEntry.Append(hyperlink);
+                            
+                            // Insert the new entry before the Scope entry
+                            sdtContent.InsertBefore(newTocEntry, paragraphs[scopeIndex]);
+                        }}
+                    }}
+                }}
+                
+                // Save changes
+                mainPart.Document.Save();
+            }}
+        }}
+        
+        // Convert the modified document back to Base64
+        string modifiedDocBase64 = Convert.ToBase64String(memoryStream.ToArray());
+        
+        // Create a result object
+        var resultObject = new
+        {{
+            Message = "Table of Contents updated successfully",
+            ModifiedDocument = modifiedDocBase64
+        }};
+        
+        // Output the result object as JSON
+        Console.WriteLine(JsonConvert.SerializeObject(resultObject));
+    }}
+}}
+catch (Exception ex)
+{{
+    var errorObject = new {{
+        Error = ex.Message,
+        StackTrace = ex.StackTrace
+    }};
+    Console.WriteLine(JsonConvert.SerializeObject(errorObject));
+}}
+
+  </UpdateTableOfContentsExamples>
+
+  <InjectItemInListExamples>
+  
+#r "nuget: DocumentFormat.OpenXml, 3.3.0"
+#r "nuget: Newtonsoft.Json, 13.0.3"
+
+using System;
+using System.IO;
+using System.Text;
+using System.Linq;
+using System.Collections.Generic;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Wordprocessing;
+using Newtonsoft.Json;
+
+// Read the Base64 string from standard input
+string base64Input = Console.In.ReadToEnd().Trim();
+
+try
+{{
+    // Decode Base64 input
+    byte[] docBytes = Convert.FromBase64String(base64Input);
+    List<string> existingListItems = new List<string>();
+    
+    // Create an expandable MemoryStream
+    using (MemoryStream memoryStream = new MemoryStream())
+    {{
+        // Write the document bytes to the stream
+        memoryStream.Write(docBytes, 0, docBytes.Length);
+        // Reset the position to the beginning
+        memoryStream.Position = 0;
+        
+        // Open the document using OpenXML SDK with readwrite access
+        using (WordprocessingDocument wordDoc = WordprocessingDocument.Open(memoryStream, true))
+        {{
+            // Get the MainDocumentPart of the document
+            MainDocumentPart mainPart = wordDoc.MainDocumentPart;
+            
+            if (mainPart != null)
+            {{
+                Document doc = mainPart.Document;
+                Body body = doc.Body;
+                
+                // Find the "In Scope" heading
+                Paragraph inScopeHeading = null;
+                bool foundInScope = false;
+                
+                // First, locate the "In Scope" heading
+                foreach (var paragraph in body.Elements<Paragraph>())
+                {{
+                    string paragraphText = string.Join("", paragraph.Descendants<Text>().Select(t => t.Text));
+                    
+                    if (paragraphText.Contains("In Scope", StringComparison.OrdinalIgnoreCase))
+                    {{
+                        inScopeHeading = paragraph;
+                        foundInScope = true;
+                        break;
+                    }}
+                }}
+
+                if (foundInScope)
+                {{
+                    // Find the numbered list after the "In Scope" heading
+                    List<Paragraph> listItems = new List<Paragraph>();
+                    Paragraph lastListItem = null;
+                    bool processingList = false;
+                    
+                    var currentElement = inScopeHeading.NextSibling();
+                    
+                    // Track the numbering ID of the list we're processing
+                    string currentListNumId = null;
+                    
+                    while (currentElement != null)
+                    {{
+                        if (currentElement is Paragraph para)
+                        {{
+                            // Check if paragraph is a list item (has numbering properties)
+                            var paraProps = para.Elements<ParagraphProperties>().FirstOrDefault();
+                            var numProps = paraProps?.GetFirstChild<NumberingProperties>();
+                            
+                            if (numProps != null)
+                            {{
+                                // Check the numbering ID
+                                var numId = numProps.NumberingId?.Val;
+                                
+                                if (currentListNumId == null)
+                                {{
+                                    // First list item we've found - set the current list ID
+                                    currentListNumId = numId;
+                                    processingList = true;
+                                    listItems.Add(para);
+                                    lastListItem = para;
+                                    
+                                    // Add the text of this list item to our collection
+                                    string itemText = string.Join("", para.Descendants<Text>().Select(t => t.Text));
+                                    existingListItems.Add(itemText.Trim());
+                                }}
+                                else if (numId == currentListNumId)
+                                {{
+                                    // This is another item in the same list
+                                    processingList = true;
+                                    listItems.Add(para);
+                                    lastListItem = para;
+                                    
+                                    // Add the text of this list item to our collection
+                                    string itemText = string.Join("", para.Descendants<Text>().Select(t => t.Text));
+                                    existingListItems.Add(itemText.Trim());
+                                }}
+                                else if (processingList)
+                                {{
+                                    // We've found a list item with a different numbering ID
+                                    // So we've reached the end of our target list
+                                    break;
+                                }}
+                            }}
+                            else if (processingList)
+                            {{
+                                // We've hit a non-list paragraph after processing the list, so we're done
+                                break;
+                            }}
+                        }}
+                        else if (processingList && !(currentElement is RunProperties || currentElement is Run))
+                        {{
+                            // We've hit a non-paragraph element after processing list items
+                            // This catches cases where a list is followed by tables, sections, etc.
+                            break;
+                        }}
+                        
+                        currentElement = currentElement.NextSibling();
+                    }}
+                    
+                    // Now insert a new list item after the last one
+                    if (lastListItem != null)
+                    {{
+                        // Clone the last list item to preserve formatting and numbering
+                        Paragraph newListItem = (Paragraph)lastListItem.CloneNode(true);
+                        
+                        // Replace the text with lorem ipsum
+                        var runElements = newListItem.Descendants<Run>().ToList();
+                        foreach (var run in runElements)
+                        {{
+                            run.Remove();
+                        }}
+                        
+                        // Add new text
+                        string loremIpsumText = "Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.";
+                        Run newRun = new Run(new Text(loremIpsumText));
+                        newListItem.AppendChild(newRun);
+                        
+                        // Insert the new list item after the last one
+                        body.InsertAfter(newListItem, lastListItem);
+                        
+                        // Add this new text to our list for testing
+                        existingListItems.Add(loremIpsumText);
+                    }}
+                }}
+                
+                // Save changes
+                doc.Save();
+            }}
+        }}
+        
+        // Convert the modified document back to Base64
+        string modifiedDocBase64 = Convert.ToBase64String(memoryStream.ToArray());
+        
+        // Create a result object with both the list items and modified document
+        var resultObject = new
+        {{
+            ListItems = existingListItems,
+            ModifiedDocument = modifiedDocBase64
+        }};
+        
+        // Output the result object as JSON
+        Console.WriteLine(JsonConvert.SerializeObject(resultObject));
+    }}
+}}
+catch (Exception ex)
+{{
+    Console.WriteLine($"An error occurred: {{ex.Message}}");
+}}
+
+  </InjectItemInListExamples>
   
