@@ -1,0 +1,55 @@
+INSTRUCTIONS FOR UPDATING PARAGRAPHS BETWEEN "BUSINESS CONTEXT" AND "SCOPE" SECTIONS
+
+OBJECTIVE:
+Find all paragraphs between the "Business Context" and "Scope" headers in a Word document,
+modify their content by adding a prefix to each paragraph, and return the modified document.
+
+PREREQUISITES:
+- A Word document containing "Business Context" and "Scope" headers
+- The document will be provided in Base64 encoded format
+
+PROCESS OVERVIEW:
+
+1. PREPARE THE DOCUMENT
+   - Receive the encoded document
+   - Convert it to a usable format
+   - Verify the document is valid before proceeding
+
+2. LOCATE THE KEY SECTIONS
+   - Find the "Business Context" heading in the document
+   - Find the "Scope" heading that follows it
+   - Identify all paragraphs located between these two headings
+
+3. MODIFY THE PARAGRAPHS
+   - For each paragraph found between the headings:
+     * Extract the current text content
+     * Add a prefix like "UPDATED: " to the beginning of the text
+     * Replace the original text with the modified version
+     * Maintain all formatting and paragraph properties
+   - Keep track of all paragraphs that were modified
+   - Preserve the original document structure
+
+4. VERIFY MODIFICATIONS
+   - Check that all targeted paragraphs were successfully updated
+   - Ensure no other parts of the document were altered
+   - Verify that document formatting remains intact
+
+5. FINALIZE THE RESULTS
+   - Save all changes to the document
+   - Convert the modified document back to Base64 format
+   - Return the modified document and a count of updated paragraphs
+
+IMPORTANT CONSIDERATIONS:
+- The headings must match "Business Context" and "Scope" exactly
+- Look for headings at outline level 2 (typically Heading 2 style)
+- Only modify paragraphs, not other elements like tables or lists
+- Preserve all formatting, styles, and properties of the paragraphs
+- Handle documents where no paragraphs exist between the specified headers
+- Process all text within a paragraph, including text with different formatting
+
+POTENTIAL ISSUES:
+- Headers might be missing or in unexpected formats
+- Paragraphs might contain complex formatting or embedded objects
+- Text modifications might affect document layout
+- Text might contain special characters that need proper handling
+- Always validate inputs and outputs to ensure successful processing

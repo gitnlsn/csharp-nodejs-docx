@@ -37,4 +37,41 @@ describe("Instructions Generator", () => {
     
     console.log("Generated Instructions:", generatedInstructions);
   });
+
+  it.only("Should genreate complex instructions", async () => {
+     // Read the sample DOCX file as binary
+     const documentBuffer = fs.readFileSync(path.join(__dirname, "sample.docx"));
+    
+     // Unzip the sample DOCX file to get the XML content
+     const zip = new AdmZip(documentBuffer);
+     const zipEntries = zip.getEntries();
+     const docxEntry = zipEntries.find(entry => entry.name.endsWith("document.xml"));
+     if (!docxEntry) {
+       throw new Error("document.xml not found");
+     }
+     const documentXml = docxEntry.getData().toString();
+ 
+     // Define the instruction to modify the document
+     const instruction = `
+     1. Acrescente um novo heading 2 chamado "new horizons" entre business context e scope.
+     
+     2. Acrescente um novo paragrafo entre new horizons.
+     "The business scope encompasses a comprehensive analysis of the operational framework, including the strategic objectives, target market segments, and the key performance indicators that will guide the evaluation of success. It aims to align the organizational goals with the market demands while ensuring compliance with regulatory standards and fostering sustainable growth."
+
+     3. Update the table of contents with the "New Horizons" item.
+     `
+     
+     // Generate instructions using the LLM
+     const generatedInstructions = await generateInstructions({
+       instruction,
+       textContent: documentXml,
+       model: "gpt-4o-mini"
+     });
+ 
+     // Validate the generated instructions
+     expect(generatedInstructions).toBeDefined();
+     expect(typeof generatedInstructions).toBe("string");
+     
+     console.log("Generated Instructions:", generatedInstructions);
+  })
 });

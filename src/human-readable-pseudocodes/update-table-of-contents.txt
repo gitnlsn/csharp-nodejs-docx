@@ -1,0 +1,61 @@
+INSTRUCTIONS FOR UPDATING TABLE OF CONTENTS WITH A NEW ENTRY
+
+OBJECTIVE:
+Modify the Table of Contents in a Word document by adding a new entry
+between the "Business Context" and "Scope" entries, and return the modified document.
+
+PREREQUISITES:
+- A Word document containing a Table of Contents with "Business Context" and "Scope" entries
+- The document will be provided in Base64 encoded format
+
+PROCESS OVERVIEW:
+
+1. PREPARE THE DOCUMENT
+   - Receive the encoded document
+   - Convert it to a usable format
+   - Verify the document is valid before proceeding
+
+2. LOCATE THE TABLE OF CONTENTS
+   - Find the Table of Contents structure in the document
+   - Verify that it contains the required entries
+   - Identify all paragraphs within the Table of Contents
+
+3. FIND THE TARGET ENTRIES
+   - Search for the "Business Context" entry (labeled as 1.2)
+   - Search for the "Scope" entry (labeled as 1.3)
+   - Confirm that both entries exist and are in the expected order
+   - Store references to these entries for insertion positioning
+
+4. CREATE THE NEW TOC ENTRY
+   - Create a new entry titled "Implementation Approach" with number "1.2.5"
+   - Use the same formatting as existing TOC entries
+   - Include all necessary elements:
+     * Section number (1.2.5)
+     * Tab character
+     * Entry title (Implementation Approach)
+     * Page reference (with appropriate field codes)
+   - Ensure the entry matches the style of the existing TOC entries
+
+5. INSERT THE NEW ENTRY
+   - Place the new entry between the "Business Context" and "Scope" entries
+   - Verify that the TOC structure remains intact
+   - Ensure all formatting and field codes are properly applied
+
+6. FINALIZE THE RESULTS
+   - Save all changes to the document
+   - Convert the modified document back to Base64 format
+   - Return the modified document with a success message
+
+IMPORTANT CONSIDERATIONS:
+- The Table of Contents structure is complex and contains field codes
+- The entries must be identified precisely by both number and name (1.2 Business Context)
+- All formatting and styles must be preserved to maintain document consistency
+- Field codes for page references must be properly structured
+- The document may have multiple TOCs or custom TOC formatting
+
+POTENTIAL ISSUES:
+- Table of Contents might be missing or have an unexpected structure
+- Target entries might not be found or might have different numbering
+- Field codes and formatting are complex and must be precisely maintained
+- The document might use custom TOC styles or formatting
+- Always validate inputs and outputs to ensure successful processing

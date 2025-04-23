@@ -1,0 +1,61 @@
+INSTRUCTIONS FOR INSERTING A TABLE BETWEEN "BUSINESS CONTEXT" AND "SCOPE" SECTIONS
+
+OBJECTIVE:
+Extract all text between the "Business Context" and "Scope" headers in a Word document,
+replace this content with a formatted table, and provide both the extracted text and the modified document.
+
+PREREQUISITES:
+- A Word document containing "Business Context" and "Scope" headers
+- The document will be provided in Base64 encoded format
+
+PROCESS OVERVIEW:
+
+1. PREPARE THE DOCUMENT
+   - Receive the encoded document
+   - Convert it to a usable format
+   - Verify the document is valid before proceeding
+
+2. LOCATE THE KEY SECTIONS
+   - Find the "Business Context" heading in the document
+   - Find the "Scope" heading that follows it
+   - Identify all content located between these two headings
+
+3. EXTRACT THE CONTENT
+   - Save all paragraphs of text found between the two headings
+   - Note their formatting to maintain document consistency
+   - Keep a record of where these paragraphs were located
+
+4. REMOVE THE ORIGINAL CONTENT
+   - Remove all the paragraphs that were between the headings
+   - Maintain the document structure without these paragraphs
+
+5. CREATE AND INSERT A TABLE
+   - Create a new table with 2 columns
+   - Add a header row with cells labeled "id" and "value"
+   - Add two data rows with sample content:
+     * Row 1: "A" and "robo"
+     * Row 2: "B" and "carro"
+   - Format the table using an appropriate style from the document
+   - Add borders to all cells of the table
+   - Set the table to an appropriate width
+   - Insert the table after the "Business Context" heading
+
+6. FINALIZE THE RESULTS
+   - Compile all the extracted text paragraphs
+   - Save the changes to the document
+   - Return both the extracted text and the modified document
+
+IMPORTANT CONSIDERATIONS:
+- The headings must match "Business Context" and "Scope" exactly
+- Look for headings at outline level 2 (typically Heading 2 style)
+- The table should use a style that matches the document's existing styles
+- If no table styles exist in the document, use a standard style like "TableGrid"
+- The table should be properly sized and formatted for the document
+- All extracted text should be preserved and returned, even if none is found
+
+POTENTIAL ISSUES:
+- Headers might be missing or in unexpected formats
+- Document might have no existing table styles to reference
+- Table might need to be resized based on document dimensions
+- Complex document formatting might affect table appearance
+- Always validate inputs and outputs to ensure successful processing

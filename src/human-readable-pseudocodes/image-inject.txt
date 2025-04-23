@@ -1,0 +1,51 @@
+INSTRUCTIONS FOR INJECTING IMAGES BETWEEN "BUSINESS CONTEXT" AND "SCOPE" SECTIONS
+
+OBJECTIVE:
+Extract all text between the "Business Context" and "Scope" headers in a Word document, 
+replace this content with an image, and provide both the extracted text and the modified document.
+
+PREREQUISITES:
+- A Word document containing "Business Context" and "Scope" headers
+- An image to insert between these sections
+- Both document and image will be provided in Base64 encoded format
+
+PROCESS OVERVIEW:
+
+1. PREPARE THE DATA
+   - Receive the encoded document and image
+   - Convert them to a usable format
+   - Check that both are valid before proceeding
+
+2. LOCATE THE KEY SECTIONS
+   - Find the "Business Context" heading in the document
+   - Find the "Scope" heading that follows it
+   - Identify all content located between these two headings
+
+3. EXTRACT THE CONTENT
+   - Save all paragraphs of text found between the two headings
+   - Note their formatting to maintain document consistency
+   - Keep a record of where these paragraphs were located
+
+4. MODIFY THE DOCUMENT
+   - Remove all the paragraphs that were between the headings
+   - Insert the provided image after the "Business Context" heading
+   - Ensure the image is properly sized and positioned
+   - Apply appropriate formatting consistent with the document style
+
+5. FINALIZE THE RESULTS
+   - Compile all the extracted text paragraphs
+   - Save the changes to the document
+   - Return both the extracted text and the modified document
+
+IMPORTANT CONSIDERATIONS:
+- The headings must match "Business Context" and "Scope" exactly
+- Look for headings at outline level 2 (typically Heading 2 style)
+- Preserve document formatting and structure
+- The image should be properly sized for the document
+- All extracted text should be preserved, even if none is found
+
+POTENTIAL ISSUES:
+- Headers might be missing or in unexpected formats
+- Document might have complex formatting or structure
+- Large documents or images may require additional processing time
+- Always validate inputs and outputs to ensure successful processing

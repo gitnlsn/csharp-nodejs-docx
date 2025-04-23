@@ -1,0 +1,76 @@
+INSTRUCTIONS FOR EXTRACTING PARAGRAPHS BETWEEN "BUSINESS CONTEXT" AND "SCOPE"
+
+OBJECTIVE:
+Extract all text paragraphs that are located between the "Business Context" 
+header and the "Scope" header in a DOCX document.
+
+REQUIRED TOOLS:
+- Capability to process DOCX documents
+- A location to store the extracted paragraphs (list or array)
+
+DETAILED STEPS:
+
+1. OPEN THE DOCUMENT
+   - Load the DOCX document for processing
+   - Prepare a structure to store the extracted paragraphs
+   - Verify that the document is valid before proceeding
+
+2. INITIALIZE CONTROL VARIABLES
+   - Create a boolean variable "inBusinessContextSection" (initially false)
+   - Prepare an empty list to store the found paragraphs
+   - Consider adding a counter to track the number of extracted paragraphs
+
+3. ITERATE THROUGH ALL PARAGRAPHS IN THE DOCUMENT
+   - For each paragraph in the document body:
+     * Determine if it is a heading or a normal paragraph
+     * Examine all the text in the paragraph, not just the beginning
+     * Process each paragraph completely before moving to the next
+
+4. IDENTIFY SECTION HEADINGS WITH PRECISION
+   - For each paragraph, rigorously check:
+     * If it is a heading (check style, formatting, and outline level)
+     * If the text contains EXACTLY "Business Context" (consider case sensitivity)
+     * If the text contains EXACTLY "Scope" (consider case sensitivity)
+     * Avoid partial matches that could cause false positives
+     * Consider using exact whole word matching, not substrings
+
+5. CONTROL THE CAPTURE STATE WITH PRECISION
+   - If a "Business Context" heading is found:
+     * Set the "inBusinessContextSection" variable to true
+     * Record the position or index where the capture started
+     * Continue to the next paragraph
+   - If a "Scope" heading is found and currently capturing:
+     * Set the "inBusinessContextSection" variable to false
+     * Record the position or index where the capture ended
+     * End the capture
+   - Make sure not to lose track of the state if there are nested headings
+
+6. CAPTURE THE RELEVANT PARAGRAPHS CAREFULLY
+   - If "inBusinessContextSection" is true and the current element is a normal paragraph:
+     * Extract all the text from the paragraph (including all text content)
+     * Verify that the text is not empty after removing whitespace
+     * Add the complete text to the array of captured paragraphs
+     * Maintain the original text formatting, if necessary
+     * Ignore paragraphs that are headings, even if they are in the captured section
+
+7. PROCESS THE CAPTURED PARAGRAPHS
+   - After iterating through all paragraphs in the document:
+     * Verify that there is captured content (the list is not empty)
+     * Validate that the captured paragraphs make sense (not too short or too long)
+     * Return the captured paragraphs in the desired format
+
+IMPORTANT POINTS:
+- Headings typically have different formatting than normal paragraphs
+- All text within a paragraph should be captured, even if divided into parts
+- The process should ignore other elements such as tables or images
+- Check headings considering exactly "Business Context" and "Scope", not approximations
+- If a heading contains additional text (e.g., "Business Context Analysis"), it should NOT be considered
+- Pay attention to different formatting variations that might be used for headings
+
+ERROR HANDLING:
+- Verify that the document was opened correctly before attempting to process it
+- Handle cases where none of the headings are found (return a specific error)
+- Handle cases where only one of the headings is found (check initial vs. final heading)
+- Confirm that there is content between the specified headings (alert if empty)
+- Capture and record any exceptions during processing with error details
+- Implement a timeout to prevent processing from hanging on very large documents

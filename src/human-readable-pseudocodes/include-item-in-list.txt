@@ -1,0 +1,59 @@
+INSTRUCTIONS FOR ADDING A NEW ITEM TO AN EXISTING LIST AFTER "IN SCOPE" HEADING
+
+OBJECTIVE:
+Find a numbered list following the "In Scope" heading in a Word document, 
+add a new item to the end of that list, and return both the list of items and the modified document.
+
+PREREQUISITES:
+- A Word document containing an "In Scope" heading
+- A numbered list following that heading
+- The document will be provided in Base64 encoded format
+
+PROCESS OVERVIEW:
+
+1. PREPARE THE DOCUMENT
+   - Receive the encoded document
+   - Convert it to a usable format
+   - Verify the document is valid before proceeding
+
+2. LOCATE THE "IN SCOPE" SECTION
+   - Search through the document for a heading or paragraph containing "In Scope"
+   - Check all paragraphs, not just headings, as formatting may vary
+   - Once found, note the position to begin searching for the list
+
+3. IDENTIFY THE NUMBERED LIST
+   - Starting from the "In Scope" heading, look for paragraphs with numbering properties
+   - Determine the numbering ID of the first list item found
+   - Continue collecting list items with the same numbering ID
+   - Stop when finding a paragraph with different numbering or no numbering
+   - Record the text of each list item for later reference
+
+4. CREATE THE NEW LIST ITEM
+   - Clone the last existing list item to preserve formatting and numbering
+   - Remove any existing text content from the cloned item
+   - Add the new text content ("Lorem ipsum dolor sit amet...")
+   - Ensure the new list item maintains the same style and numbering sequence
+
+5. INSERT THE NEW ITEM
+   - Add the new list item immediately after the last existing list item
+   - Verify that the numbering sequence is maintained
+   - Ensure the document structure remains intact
+
+6. FINALIZE THE RESULTS
+   - Save all changes to the document
+   - Prepare a list of all items (including the newly added one)
+   - Return both the list of items and the modified document
+
+IMPORTANT CONSIDERATIONS:
+- The "In Scope" text must be identified accurately, regardless of case
+- Only modify the first numbered list found after the "In Scope" heading
+- Preserve all formatting and numbering properties of the original list
+- The new item should appear to be a natural continuation of the list
+- Handle documents where no list or no "In Scope" heading is found
+
+POTENTIAL ISSUES:
+- Documents with multiple "In Scope" headings
+- Complex document structures with nested lists
+- Different list formatting or numbering styles
+- Lists that continue after interruptions (like comments or images)
+- Always validate inputs and outputs to ensure successful processing

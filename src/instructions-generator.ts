@@ -18,7 +18,20 @@ export async function generateInstructions(options: GenerateInstructionsOptions)
         temperature: 0.0,
     });
 
+    const extractParagraphInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "extract-paragraph.txt"), "utf-8");
+    const updateTableOfContentsInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "update-table-of-contents.txt"), "utf-8");
+    const includeItemInListInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "include-item-in-list.txt"), "utf-8");
+    const tableInjectInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "table-inject.txt"), "utf-8");
+    const updateParagraphsInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "update-paragraphs.txt"), "utf-8");
+    const imageInjectInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "image-inject.txt"), "utf-8");
+    const insertHeadingBetweenHeadingsInstructions = fs.readFileSync(path.join(__dirname, "human-readable-pseudocodes", "insert-heading-between-headings.txt"), "utf-8");
+
     const prompt = `
+    Glossary:
+    - user instruction: the instruction provided by the user
+    - docx content: the content of the docx file
+    - set of instructions: a set of instructions to edit the docx file, each example given is a set of instructions.
+
     You are a Senior word document editor.
     You are very procedural, detailed and precise.
     You will generate instructions to edit a word document.
@@ -38,49 +51,61 @@ export async function generateInstructions(options: GenerateInstructionsOptions)
     - Be in the form of a numbered list of instructions
     - when creating or updating a minor element (paragraph, table, image, etc), be specific about the styles and capture the style of existing elements to keep it consistent.
     - when updating content, keep the original style and formatting.
-    - always specify how to capture the style for the minor elements we need to modify to keep the style consistent.s
+    - always specify how to capture the style for the minor elements we need to modify to keep the style consistent.
     
     Here are some examples:
-    
-    <ExampleInstructions1>
-    1. You will include a new row in business requirements table.
-    2. The business requirements table is the first table inside Business Requirements heading 1 section.
-    3. Capture the paragraph style of the table paragraphs to keep the pattern.
-    4. Find the last ID in the table and define the next ID. Notice the ID is a letter.
-    5. Include a new row in the table with the next ID and paragraph containing the following content, use the captured style:
-    "Lorem Ipsum is simply dummy text"
-    </ExampleInstructions1>
-    
-    <ExampleInstructions2>
-    1. Capture the style of the Business Context section.
-    2. Capture the style of the paragraphs in the Business Context section.
-    3. Include a new section between the Business Context section and Scope section with the content "New horizons" with the same style as the Business Context section.
-    4. Then include two paragraphs with the following content using the same style as the paragraphs in the Business Context section:
-    "Lorem Ipsum is simply dummy text"
-    "Summary: Contrary to popular belief"
-    </ExampleInstructions2>
-    
-    <ExampleInstructions3>
-    1. Include the image in the document.xml at the end of the last paragraph in the Business Context section.
-    2. The image will be provided as base64 encoded string after docx base64 string with comma separator
-    </ExampleInstructions3>
-    
-    <ExampleInstructions4>
-    1. For each paragraphs between Business Context and Scope sections, include a new paragraph with the same content
-    </ExampleInstructions4>
+
+    <ExtractingParagraphsInstructions>
+    ${extractParagraphInstructions}
+    </ExtractingParagraphsInstructions>
+
+    <UpdateTableOfContentsInstructions>
+    ${updateTableOfContentsInstructions}
+    </UpdateTableOfContentsInstructions>
+
+    <IncludeItemInListInstructions>
+    ${includeItemInListInstructions}
+    </IncludeItemInListInstructions>
+
+    <TableInjectInstructions>
+    ${tableInjectInstructions}
+    </TableInjectInstructions>
+
+    <UpdateParagraphsInstructions>
+    ${updateParagraphsInstructions}
+    </UpdateParagraphsInstructions>
+
+    <ImageInjectInstructions>
+    ${imageInjectInstructions}
+    </ImageInjectInstructions>
+
+    <InsertHeadingBetweenHeadingsInstructions>
+    ${insertHeadingBetweenHeadingsInstructions}
+    </InsertHeadingBetweenHeadingsInstructions>
+
+    Your output should be a list of set of instructions, each set related to a specific instruction of the user instruction.
+
+    Eg:
+    <OutputExample>
+        Extracts the paragraphs from the docx content.
+        ${extractParagraphInstructions}
+
+        Update paragraphs of the docx content.
+        ${updateParagraphsInstructions}
+    </OutputExample>
     `
 
     fs.writeFileSync(
         path.join(__dirname, "last-instructions-generator-prompt.txt"),
         Buffer.from(prompt, 'utf-8')
-      );
+    );
 
     const promptTokens = countTokens({
         text: prompt,
         model
     })
 
-    const xmlTokens = countTokens({ 
+    const xmlTokens = countTokens({
         text: textContent,
         model
     })
